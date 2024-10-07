@@ -26,6 +26,20 @@ git_custom_status() {
   fi
 }
 
+# Function to get OS ID from /etc/os-release
+get_os_id() {
+  # Check if /etc/os-release exists
+  if [[ ! -f /etc/os-release ]]; then
+    echo unk
+  fi
+  
+  # Use grep to find the line with "ID:" and awk to extract the value after the colon
+  local os_id=$(grep '^ID=' /etc/os-release | awk -F= '{print $2}')
+  
+  # Print the extracted OS ID
+  echo "${os_id}"
+}
+
 # Determine the time since last commit. If branch is clean,
 # use a neutral color, otherwise colors will vary according to time.
 function git_time_since_commit() {
@@ -83,7 +97,7 @@ bat=''
 local current_dir='${PWD/#$HOME/~}'
 
 # server info
-# goal is to change colour of server name so its easier to tell. Hashing
+# goal is to change color of server name so its easier to tell. Hashing
 # hostname and going based of that seems a good idea.....
 
 # idea copied from the irssi script 'nickcolor.pl'
@@ -124,6 +138,18 @@ function _hostname_color() {
 }
 hostname_color=$(_hostname_color)
 
+# Hash the dist name and return a fixed "random" color
+function _dist_color() {
+	local chash=0
+  foreach letter ( ${(ws::)get_os_id[(ws:.:)1]} )
+		(( chash += #letter ))
+	end
+	local crand=$(( $chash % $#colnames ))
+	local crandname=$colnames[$crand]
+	echo "%{${fg[$crandname]}%}"
+}
+dist_color=$(_dist_color)
+
 
 # Git info.
 local git_info='$(git_prompt_info)'
@@ -139,6 +165,7 @@ PROMPT="
 %{$fg[cyan]%}%n \
 %{$fg[white]%}at \
 ${hostname_color}$(box_name) \
+${dist_color}($(get_os_id)) \
 %{$fg[white]%}in \
 %{$terminfo[bold]$fg[yellow]%}${current_dir}%{$reset_color%} \
 ${git_info} ${git_time}\
