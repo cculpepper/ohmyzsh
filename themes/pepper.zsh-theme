@@ -39,6 +39,7 @@ get_os_id() {
   # Print the extracted OS ID
   echo "${os_id}"
 }
+os_id=$(get_os_id)
 
 # Determine the time since last commit. If branch is clean,
 # use a neutral color, otherwise colors will vary according to time.
@@ -140,16 +141,20 @@ hostname_color=$(_hostname_color)
 
 # Hash the dist name and return a fixed "random" color
 function _dist_color() {
-	local chash=0
-  foreach letter ( ${(ws::)get_os_id[(ws:.:)1]} )
-		(( chash += #letter ))
-	end
-	local crand=$(( $chash % $#colnames ))
-	local crandname=$colnames[$crand]
-	echo "%{${fg[$crandname]}%}"
+  local chash=0
+  foreach letter ( ${(ws::)os_id[(ws:.:)1]} )
+    (( chash += #letter ))
+  end
+  local crand=$(( $chash % $#colnames ))
+  local crandname=$colnames[$crand]
+  echo "%{${fg[$crandname]}%}"
 }
 dist_color=$(_dist_color)
 
+echo 
+foreach letter ( ${(ws::)get_os_id[(ws:.:)1]} )
+  echo $letter
+end
 
 # Git info.
 local git_info='$(git_prompt_info)'
